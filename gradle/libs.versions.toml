@@ -13,7 +13,10 @@ navigationCompose = "2.9.4"
 lifecycleViewmodelCompose = "2.9.4"
 materialIconsExtended = "1.7.8"
 
+playServicesCodeScanner = "16.1.0"
+
 [libraries]
+play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "playServicesCodeScanner" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

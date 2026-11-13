@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.play.services.code.scanner)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
