@@ -21,11 +21,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.smartgas_frontend.kitchenmonitoring.presentation.addsensor.AddSensorScreen
+import com.smartgas_frontend.kitchenmonitoring.presentation.di.KitchenMonitoringPresentationModule
+import com.smartgas_frontend.kitchenmonitoring.presentation.sensordetail.SensorDetailScreen
+import com.smartgas_frontend.kitchenmonitoring.presentation.sensors.SensorsScreen
+import com.smartgas_frontend.kitchenmonitoring.presentation.zonedetail.ZoneDetailScreen
+import com.smartgas_frontend.kitchenmonitoring.presentation.zones.ZonesScreen
 import com.smartgas_frontend.shared.i18n.LocalStrings
 import com.smartgas_frontend.shared.presentation.pages.NotFoundScreen
 
@@ -86,11 +95,100 @@ private fun Home() {
             startDestination = Routes.HOME,
             modifier = Modifier.padding(padding)
         ) {
-            tabs.forEach { tab ->
+            tabs.filterNot { it.route == Routes.ZONES }.forEach { tab ->
                 composable(tab.route) {
                     PlaceholderScreen(title = if (strings.isSpanish) tab.es else tab.en)
                 }
             }
+            composable(Routes.ZONES) {
+                val viewModel = viewModel { KitchenMonitoringPresentationModule.getZonesViewModel() }
+
+                ZonesScreen(
+                    viewModel = viewModel,
+                    onNavigate = { route -> navController.navigate(route) },
+                    // navigate normal (no navigateSection) para que "atras" vuelva a Zones
+                    onOpenZone = { zoneId -> navController.navigate(Routes.zoneDetail(zoneId)) }
+                )
+            }
+
+            composable(
+                route = Routes.ZONE_DETAIL,
+                arguments = listOf(navArgument(Routes.ZONE_ID_ARG) { type = NavType.IntType })
+            ) { entry ->
+                val zoneId = entry.arguments?.getInt(Routes.ZONE_ID_ARG) ?: 0
+                val viewModel = viewModel(key = "zone-$zoneId") {
+                    KitchenMonitoringPresentationModule.getZoneDetailViewModel(zoneId)
+                }
+
+                ZoneDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenSensor = { sensorId -> navController.navigate(Routes.sensorDetail(sensorId)) },
+                    onAddSensor = { id -> navController.navigate(Routes.addSensor(id)) }
+                )
+            }
+
+            composable(
+                route = Routes.SENSOR_DETAIL,
+                arguments = listOf(navArgument(Routes.SENSOR_ID_ARG) { type = NavType.IntType })
+            ) { entry ->
+                val sensorId = entry.arguments?.getInt(Routes.SENSOR_ID_ARG) ?: 0
+                val viewModel = viewModel(key = "sensor-$sensorId") {
+                    KitchenMonitoringPresentationModule.getSensorDetailViewModel(sensorId)
+                }
+
+                SensorDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onEdit = { id -> navController.navigate(Routes.editSensor(id)) }
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_SENSOR,
+                arguments = listOf(navArgument(Routes.SENSOR_ID_ARG) { type = NavType.IntType })
+            ) { entry ->
+                val sensorId = entry.arguments?.getInt(Routes.SENSOR_ID_ARG) ?: 0
+                val viewModel = viewModel(key = "edit-sensor-$sensorId") {
+                    KitchenMonitoringPresentationModule.getEditSensorViewModel(sensorId)
+                }
+
+                // Misma pantalla que Add sensor, en modo edicion
+                AddSensorScreen(viewModel = viewModel, onClose = { navController.popBackStack() })
+            }
+
+            composable(
+                route = Routes.ADD_SENSOR,
+                arguments = listOf(
+                    // -1 = sin zona preseleccionada (los argumentos Int de Navigation no pueden ser null)
+                    navArgument(Routes.ZONE_ID_ARG) {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    },
+                    navArgument(Routes.SCAN_ARG) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) { entry ->
+                val zoneId = entry.arguments?.getInt(Routes.ZONE_ID_ARG)?.takeIf { it >= 0 }
+                val startWithScan = entry.arguments?.getBoolean(Routes.SCAN_ARG) == true
+                val viewModel = viewModel(key = "add-sensor-$zoneId") {
+                    KitchenMonitoringPresentationModule.getAddSensorViewModel(zoneId)
+                }
+
+                AddSensorScreen(
+                    viewModel = viewModel,
+                    onClose = { navController.popBackStack() },
+                    startWithScan = startWithScan
+                )
+            }
+
+            composable(Routes.SENSORS) {
+                val viewModel = viewModel { KitchenMonitoringPresentationModule.getSensorsViewModel() }
+                SensorsScreen(viewModel = viewModel)
+            }
+
             composable(Routes.NOT_FOUND) {
                 NotFoundScreen(onGoHome = { navController.navigateSection(Routes.HOME) })
             }
