@@ -4,7 +4,7 @@ import com.smartgas_frontend.kitchenmonitoring.data.remote.MonitoringService
 import com.smartgas_frontend.kitchenmonitoring.data.remote.SensorService
 import com.smartgas_frontend.kitchenmonitoring.data.repository.MonitoringRepository
 import com.smartgas_frontend.kitchenmonitoring.data.repository.SensorRepository
-import com.smartgas_frontend.paymentmanagement.data.remote.SubscriptionService
+import com.smartgas_frontend.paymentmanagement.data.di.PaymentManagementDataModule
 import com.smartgas_frontend.shared.data.di.SharedDataModule
 
 object KitchenMonitoringDataModule {
@@ -21,7 +21,7 @@ object KitchenMonitoringDataModule {
         return SensorRepository(
             getSensorService(),
             getMonitoringService(),
-            SharedDataModule.getRetrofit().create(SubscriptionService::class.java)
+            PaymentManagementDataModule.getSubscriptionService()
         )
     }
 
@@ -29,7 +29,7 @@ object KitchenMonitoringDataModule {
         return MonitoringRepository(
             getMonitoringService(),
             getSensorService(),
-            SharedDataModule.getRetrofit().create(SubscriptionService::class.java)
+            PaymentManagementDataModule.getSubscriptionService()
         )
     }
 }

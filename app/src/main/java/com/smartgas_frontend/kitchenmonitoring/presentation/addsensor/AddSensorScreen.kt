@@ -178,7 +178,7 @@ fun AddSensorScreen(viewModel: AddSensorViewModel, onClose: () -> Unit, startWit
                 Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     pageText.planInfo(
-                        plan = trPlanName(strings, data.currentPlan?.name),
+                        plan = trPlanName(strings, data.currentPlan),
                         max = if (data.unlimitedSensors) strings.t(R.string.unlimitedShort) else data.maxSensors.toString(),
                         inUse = data.sensors.size
                     ),

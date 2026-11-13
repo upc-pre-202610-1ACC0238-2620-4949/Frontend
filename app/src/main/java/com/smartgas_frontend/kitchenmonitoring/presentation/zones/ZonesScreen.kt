@@ -107,7 +107,7 @@ fun ZonesScreen(viewModel: ZonesViewModel, onNavigate: (String) -> Unit, onOpenZ
     val remainingZones = if (data.unlimitedZones) strings.t(R.string.unlimitedShort) else data.remainingZones.toString()
     val planLimitText = strings.t(
         R.string.zonePlanLimitText,
-        "plan" to trPlanName(strings, currentPlan?.name),
+        "plan" to trPlanName(strings, currentPlan),
         "max" to maxZonesLabel
     )
 
