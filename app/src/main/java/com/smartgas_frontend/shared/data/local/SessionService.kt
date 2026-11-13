@@ -2,7 +2,7 @@ package com.smartgas_frontend.shared.data.local
 
 import android.content.Context
 import com.google.gson.Gson
-import com.smartgas_frontend.shared.domain.model.SessionUser
+import com.smartgas_frontend.iam.domain.model.Account
 
 private const val KEY = "smartgas_session_v1"
 
@@ -10,9 +10,9 @@ class SessionService(context: Context) {
     private val preferences = context.getSharedPreferences(KEY, Context.MODE_PRIVATE)
     private val gson = Gson()
 
-    private var memoryUser: SessionUser? = null
+    private var memoryUser: Account? = null
 
-    fun save(user: SessionUser, persist: Boolean = true) {
+    fun save(user: Account, persist: Boolean = true) {
         memoryUser = user
 
         if (persist) {
@@ -22,8 +22,8 @@ class SessionService(context: Context) {
         }
     }
 
-    fun getCurrentUser(): SessionUser? = memoryUser ?: try {
-        preferences.getString(KEY, null)?.let { gson.fromJson(it, SessionUser::class.java) }
+    fun getCurrentUser(): Account? = memoryUser ?: try {
+        preferences.getString(KEY, null)?.let { gson.fromJson(it, Account::class.java) }
     } catch (e: Exception) {
         null
     }

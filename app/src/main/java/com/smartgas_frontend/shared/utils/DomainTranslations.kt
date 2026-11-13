@@ -1,6 +1,8 @@
 package com.smartgas_frontend.shared.utils
 
 import com.smartgas_frontend.R
+import com.smartgas_frontend.incidentpreventionnotification.domain.model.Notification
+import com.smartgas_frontend.paymentmanagement.domain.model.Plan
 import com.smartgas_frontend.shared.data.remote.UNLIMITED
 import com.smartgas_frontend.shared.i18n.Strings
 
@@ -205,8 +207,9 @@ fun trIncidentType(strings: Strings, type: String?) = translateValue(strings, ty
 fun trSensorType(strings: Strings, type: String?) = translateValue(strings, type, sensorTypeKeys)
 fun trSensorName(strings: Strings, name: String?) = translateValue(strings, name, sensorNameKeys)
 fun trLocationDetail(strings: Strings, detail: String?) = translateValue(strings, detail, locationKeys)
+fun trPlanName(strings: Strings, plan: Plan?) = translateValue(strings, plan?.name, planNameKeys)
 fun trPlanName(strings: Strings, name: String?) = translateValue(strings, name, planNameKeys)
-fun trPlanDescription(strings: Strings, planName: String?) = translateValue(strings, planName, planDescriptionKeys)
+fun trPlanDescription(strings: Strings, plan: Plan?) = translateValue(strings, plan?.name, planDescriptionKeys)
 fun trPlanFeature(strings: Strings, feature: String?) = translateValue(strings, feature, planFeatureKeys)
 fun trActivityDetail(strings: Strings, detail: String?) = translateValue(strings, detail, activityDetailKeys)
 
@@ -237,17 +240,14 @@ fun translatedMessageParams(strings: Strings, params: Map<String, String>): Arra
 private val incidentMessageRegex =
     Regex("^Sensor (.+?) detected a (.+?) event in zone (.+?)\\.$", RegexOption.IGNORE_CASE)
 
-fun formatIncidentNotification(
-    strings: Strings,
-    message: String,
-    messageKey: String? = null,
-    messageParams: Map<String, String> = emptyMap()
-): String {
-    if (!messageKey.isNullOrEmpty()) {
-        return strings.t(messageKey, *translatedMessageParams(strings, messageParams))
+fun formatIncidentNotification(strings: Strings, notification: Notification?): String {
+    if (notification == null) return ""
+
+    if (!notification.messageKey.isNullOrEmpty()) {
+        return strings.t(notification.messageKey, *translatedMessageParams(strings, notification.messageParams))
     }
 
-    val match = incidentMessageRegex.find(message)
+    val match = incidentMessageRegex.find(notification.message)
 
     if (match != null) {
         return strings.t(
@@ -258,5 +258,5 @@ fun formatIncidentNotification(
         )
     }
 
-    return message
+    return notification.message
 }
