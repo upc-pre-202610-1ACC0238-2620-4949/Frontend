@@ -1,80 +1,60 @@
 package com.smartgas_frontend.iam.data.repository
 
 import com.smartgas_frontend.common.Resource
-import com.smartgas_frontend.iam.data.remote.AuthService
-import com.smartgas_frontend.iam.data.remote.dto.SignInRequest
-import com.smartgas_frontend.iam.data.remote.dto.SignUpRequest
-import com.smartgas_frontend.iam.data.remote.dto.toAccount
-import com.smartgas_frontend.iam.domain.model.Account
-import com.smartgas_frontend.shared.data.local.SessionService
-import com.smartgas_frontend.shared.data.remote.DomainException
+import com.smartgas_frontend.iam.data.remote.SettingsService
+import com.smartgas_frontend.iam.data.remote.dto.UpdateEmergencyContactRequest
+import com.smartgas_frontend.iam.data.remote.dto.toAccountSettings
+import com.smartgas_frontend.iam.data.remote.dto.toEmergencyContact
+import com.smartgas_frontend.iam.data.remote.dto.toRequest
+import com.smartgas_frontend.iam.domain.model.AccountSettings
+import com.smartgas_frontend.iam.domain.model.EmergencyContact
+import com.smartgas_frontend.kitchenmonitoring.data.remote.SensorService
+import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.toSensor
+import com.smartgas_frontend.kitchenmonitoring.domain.model.Sensor
+import com.smartgas_frontend.kitchenmonitoring.data.remote.MonitoringService
+import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.toZone
+import com.smartgas_frontend.kitchenmonitoring.domain.model.Zone
 import com.smartgas_frontend.shared.data.remote.bodyOrThrow
-import com.smartgas_frontend.shared.data.remote.errorMessage
 import com.smartgas_frontend.shared.data.remote.safeCall
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-const val INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
-const val EMAIL_EXISTS = "EMAIL_EXISTS"
-
-data class RegisterProfileData(
-    val fullName: String = "",
-    val accountType: String = "commercial",
-    val businessName: String = "",
-    val phone: String = "",
-    val district: String = ""
-)
-
-class AccountRepository(
-    private val service: AuthService,
-    private val sessionService: SessionService
+class SettingsRepository(
+    private val service: SettingsService,
+    private val monitoringService: MonitoringService,
+    private val sensorService: SensorService
 ) {
 
-    suspend fun login(email: String, password: String, remember: Boolean = true): Resource<Account> = withContext(Dispatchers.IO) {
-        safeCall {
-            val response = service.signIn(SignInRequest(email, password))
-
-            if (response.code() == 400 || response.code() == 401 || response.code() == 404) {
-                throw DomainException(INVALID_CREDENTIALS)
-            }
-
-            val account = response.bodyOrThrow().toAccount()
-            sessionService.save(account, persist = remember)
-            account
-        }
+    suspend fun getSettings(accountId: Int): Resource<AccountSettings> = withContext(Dispatchers.IO) {
+        safeCall { service.getSettings(accountId).bodyOrThrow().toAccountSettings() }
     }
 
-    suspend fun register(
-        email: String,
-        password: String,
-        profileData: RegisterProfileData = RegisterProfileData()
-    ): Resource<Account> = withContext(Dispatchers.IO) {
-        safeCall {
-            val accountType = profileData.accountType.ifBlank { "commercial" }
-
-            val response = service.signUp(
-                SignUpRequest(
-                    email = email,
-                    password = password,
-                    fullName = profileData.fullName.ifBlank { email.substringBefore('@') },
-                    businessName = profileData.businessName.ifBlank { "SmartGas monitored facility" },
-                    phone = profileData.phone,
-                    district = profileData.district,
-                    role = if (accountType == "commercial") "RestaurantAdministrator" else "HomeOwner"
-                )
-            )
-
-            if (!response.isSuccessful) {
-                val message = response.errorMessage().lowercase()
-
-                if (response.code() == 409 || message.contains("email") || message.contains("already")) {
-                    throw DomainException(EMAIL_EXISTS)
-                }
-            }
-
-            val account = response.bodyOrThrow().toAccount()
-            sessionService.save(account)
-            account
+    suspend fun saveSettings(accountId: Int, data: AccountSettings): Resource<AccountSettings> =
+        withContext(Dispatchers.IO) {
+            safeCall { service.saveSettings(accountId, data.toRequest()).bodyOrThrow().toAccountSettings() }
         }
+
+    suspend fun getEmergencyContact(accountId: Int): Resource<EmergencyContact> = withContext(Dispatchers.IO) {
+        safeCall { service.getEmergencyContact(accountId).bodyOrThrow().toEmergencyContact(accountId) }
+    }
+
+    suspend fun saveEmergencyContact(accountId: Int, data: EmergencyContact): Resource<EmergencyContact> =
+        withContext(Dispatchers.IO) {
+            safeCall {
+                val response = service.saveEmergencyContact(
+                    accountId,
+                    UpdateEmergencyContactRequest(name = data.name, phone = data.phone, email = data.email)
+                )
+
+                response.bodyOrThrow().toEmergencyContact(accountId)
+            }
+        }
+
+    suspend fun getZones(accountId: Int): Resource<List<Zone>> = withContext(Dispatchers.IO) {
+        safeCall { monitoringService.getZones(accountId).bodyOrThrow().map { it.toZone() } }
+    }
+
+    suspend fun getSensors(accountId: Int): Resource<List<Sensor>> = withContext(Dispatchers.IO) {
+        safeCall { sensorService.getSensors(accountId).bodyOrThrow().map { it.toSensor() } }
     }
 }
