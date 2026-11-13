@@ -25,6 +25,12 @@ data class CreateZoneRequest(
     val sensitivity: String
 )
 
+data class UpdateZoneRequest(
+    val name: String,
+    val description: String,
+    val sensitivity: String
+)
+
 fun ZoneDto.toZone() = Zone(
     id = id ?: 0,
     accountId = accountId,

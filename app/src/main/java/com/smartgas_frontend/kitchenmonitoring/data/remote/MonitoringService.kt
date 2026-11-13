@@ -4,11 +4,15 @@ import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.CreateSensorReadi
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.CreateZoneRequest
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.ReadingResultDto
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.SensorReadingDto
+import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.UpdateZoneRequest
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.ZoneDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MonitoringService {
@@ -17,6 +21,12 @@ interface MonitoringService {
 
     @POST("zones")
     suspend fun createZone(@Body request: CreateZoneRequest): Response<ZoneDto>
+
+    @PUT("zones/{id}")
+    suspend fun updateZone(@Path("id") id: Int, @Body request: UpdateZoneRequest): Response<ZoneDto>
+
+    @DELETE("zones/{id}")
+    suspend fun deleteZone(@Path("id") id: Int): Response<Unit>
 
     @GET("sensor-readings")
     suspend fun getSensorReadings(@Query("accountId") accountId: Int): Response<List<SensorReadingDto>>

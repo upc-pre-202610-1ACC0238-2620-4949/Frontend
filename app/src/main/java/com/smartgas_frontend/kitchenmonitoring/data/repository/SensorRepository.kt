@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 const val EMPTY_SENSOR_CODE = "EMPTY_SENSOR_CODE"
 const val EMPTY_SENSOR_NAME = "EMPTY_SENSOR_NAME"
@@ -167,6 +168,16 @@ class SensorRepository(
             )
 
             normalizeSensor(response.bodyOrThrow().toSensor())
+        }
+    }
+
+    suspend fun deleteSensor(id: Int): Resource<Unit> = withContext(Dispatchers.IO) {
+        safeCall {
+            val response = service.deleteSensor(id)
+
+            if (!response.isSuccessful) {
+                throw HttpException(response)
+            }
         }
     }
 

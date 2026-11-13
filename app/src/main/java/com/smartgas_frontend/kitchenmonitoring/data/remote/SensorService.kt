@@ -5,6 +5,7 @@ import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.SensorDto
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.UpdateSensorRequest
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -20,4 +21,7 @@ interface SensorService {
 
     @PATCH("sensors/{id}")
     suspend fun updateSensor(@Path("id") id: Int, @Body request: UpdateSensorRequest): Response<SensorDto>
+
+    @DELETE("sensors/{id}")
+    suspend fun deleteSensor(@Path("id") id: Int): Response<Unit>
 }

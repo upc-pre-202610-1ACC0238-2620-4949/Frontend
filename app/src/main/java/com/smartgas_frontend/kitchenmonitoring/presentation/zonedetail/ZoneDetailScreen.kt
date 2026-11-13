@@ -11,19 +11,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GppGood
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sensors
 import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.smartgas_frontend.R
+import com.smartgas_frontend.common.Resource
+import com.smartgas_frontend.kitchenmonitoring.data.repository.EMPTY_ZONE_NAME
+import com.smartgas_frontend.kitchenmonitoring.data.repository.ZONE_HAS_SENSORS
+import com.smartgas_frontend.kitchenmonitoring.data.repository.ZoneDraft
 import com.smartgas_frontend.kitchenmonitoring.domain.model.Sensor
 import com.smartgas_frontend.kitchenmonitoring.domain.model.SensorReading
 import com.smartgas_frontend.kitchenmonitoring.presentation.components.GasSeriesColor
@@ -75,6 +88,15 @@ private class PageText(private val es: Boolean) {
     val noReadings = if (es) "Aún no hay lecturas para esta zona." else "No readings for this zone yet."
     val notFound = if (es) "No se encontró la zona." else "Zone not found."
     val addSensor = if (es) "Agregar sensor" else "Add sensor"
+    val edit = if (es) "Editar zona" else "Edit zone"
+    val delete = if (es) "Eliminar zona" else "Delete zone"
+    val name = if (es) "Nombre" else "Name"
+    val description = if (es) "Descripción" else "Description"
+    val save = if (es) "Guardar" else "Save"
+    val cancel = if (es) "Cancelar" else "Cancel"
+    val confirmDelete = if (es) "¿Eliminar esta zona? Esta acción no se puede deshacer." else "Delete this zone? This can't be undone."
+    val nameRequired = if (es) "Ingresa un nombre para la zona." else "Enter a name for the zone."
+    val hasSensors = if (es) "La zona todavía tiene sensores. Muévelos o elimínalos primero." else "The zone still has sensors. Move or delete them first."
 
     fun gasSummary(gas: String, percent: Int?, threshold: String): String {
         val base = if (es) "Gas en $gas ppm" else "Gas at $gas ppm"
@@ -104,6 +126,15 @@ fun ZoneDetailScreen(
     val state = viewModel.state.value
     val data = state.data ?: ZoneDetailData()
     val zone = data.zone
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var actionError by remember { mutableStateOf("") }
+
+    fun errorText(code: String?): String = when (code) {
+        ZONE_HAS_SENSORS -> pageText.hasSensors
+        EMPTY_ZONE_NAME -> pageText.nameRequired
+        else -> strings.t(R.string.apiError)
+    }
 
     // Se recarga cada vez que la pantalla vuelve a mostrarse (ej. al regresar de Add sensor),
     // por eso la carga esta aqui y no en el init del ViewModel.
@@ -128,6 +159,87 @@ fun ZoneDetailScreen(
             IconButton(onClick = viewModel::loadData, enabled = !state.isLoading) {
                 Icon(Icons.Outlined.Refresh, contentDescription = pageText.refresh)
             }
+            if (zone != null) {
+                IconButton(onClick = { showEditDialog = true }) {
+                    Icon(Icons.Outlined.Edit, contentDescription = pageText.edit)
+                }
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(Icons.Outlined.Delete, contentDescription = pageText.delete)
+                }
+            }
+        }
+
+        if (actionError.isNotEmpty()) {
+            AlertBanner(actionError)
+        }
+
+        if (showEditDialog && zone != null) {
+            var name by remember { mutableStateOf(zone.name) }
+            var description by remember { mutableStateOf(zone.description) }
+
+            AlertDialog(
+                onDismissRequest = { showEditDialog = false },
+                title = { Text(pageText.edit) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text(pageText.name) },
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text(pageText.description) }
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showEditDialog = false
+                        viewModel.updateZone(
+                            ZoneDraft(name = name, description = description, sensitivity = zone.sensitivity)
+                        ) { result ->
+                            actionError = if (result is Resource.Error) errorText(result.message) else ""
+                        }
+                    }) {
+                        Text(pageText.save)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditDialog = false }) {
+                        Text(pageText.cancel)
+                    }
+                }
+            )
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text(pageText.delete) },
+                text = { Text(pageText.confirmDelete) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteZone { result ->
+                            if (result is Resource.Success) {
+                                onBack()
+                            } else {
+                                actionError = errorText(result.message)
+                            }
+                        }
+                    }) {
+                        Text(pageText.delete, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text(pageText.cancel)
+                    }
+                }
+            )
         }
 
         if (state.isLoading && zone == null) {

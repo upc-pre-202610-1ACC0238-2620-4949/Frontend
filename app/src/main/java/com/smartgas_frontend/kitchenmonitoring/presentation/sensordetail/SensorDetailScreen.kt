@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -14,8 +16,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.smartgas_frontend.R
+import com.smartgas_frontend.common.Resource
 import com.smartgas_frontend.kitchenmonitoring.presentation.components.GasSeriesColor
 import com.smartgas_frontend.kitchenmonitoring.presentation.components.ReadingsChart
 import com.smartgas_frontend.kitchenmonitoring.presentation.components.TemperatureSeriesColor
@@ -60,6 +68,9 @@ private class PageText(es: Boolean) {
     val lastReading = if (es) "Última lectura" else "Last reading"
     val noReadings = if (es) "Aún no hay lecturas de este sensor." else "No readings for this sensor yet."
     val notFound = if (es) "No se encontró el sensor." else "Sensor not found."
+    val delete = if (es) "Eliminar sensor" else "Delete sensor"
+    val cancel = if (es) "Cancelar" else "Cancel"
+    val confirmDelete = if (es) "¿Eliminar este sensor? También se borrarán sus lecturas e incidentes." else "Delete this sensor? Its readings and incidents will be deleted too."
 }
 
 @Composable
@@ -70,6 +81,8 @@ fun SensorDetailScreen(viewModel: SensorDetailViewModel, onBack: () -> Unit, onE
     val data = state.data ?: SensorDetailData()
     val sensor = data.sensor
     val latest = data.latestReading
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteFailed by remember { mutableStateOf(false) }
 
     // Se recarga cada vez que la pantalla vuelve a mostrarse.
     LaunchedEffect(Unit) {
@@ -98,7 +111,41 @@ fun SensorDetailScreen(viewModel: SensorDetailViewModel, onBack: () -> Unit, onE
                 IconButton(onClick = { onEdit(sensor.id) }) {
                     Icon(Icons.Outlined.Edit, contentDescription = pageText.edit)
                 }
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(Icons.Outlined.Delete, contentDescription = pageText.delete)
+                }
             }
+        }
+
+        if (deleteFailed) {
+            AlertBanner(strings.t(R.string.apiError))
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text(pageText.delete) },
+                text = { Text(pageText.confirmDelete) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteSensor { result ->
+                            if (result is Resource.Success) {
+                                onBack()
+                            } else {
+                                deleteFailed = true
+                            }
+                        }
+                    }) {
+                        Text(pageText.delete, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text(pageText.cancel)
+                    }
+                }
+            )
         }
 
         if (state.isLoading && sensor == null) {

@@ -45,6 +45,12 @@ class SensorDetailViewModel(
     private val _state = mutableStateOf(UIState<SensorDetailData>(isLoading = true))
     val state: State<UIState<SensorDetailData>> get() = _state
 
+    fun deleteSensor(onResult: (Resource<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(sensorRepository.deleteSensor(sensorId))
+        }
+    }
+
     fun loadData() {
         _state.value = UIState(isLoading = true, data = _state.value.data)
 

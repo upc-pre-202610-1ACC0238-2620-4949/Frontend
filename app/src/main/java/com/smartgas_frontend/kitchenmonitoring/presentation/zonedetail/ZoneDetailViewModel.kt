@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.smartgas_frontend.common.Resource
 import com.smartgas_frontend.common.UIState
 import com.smartgas_frontend.kitchenmonitoring.data.repository.MonitoringRepository
+import com.smartgas_frontend.kitchenmonitoring.data.repository.ZoneDraft
 import com.smartgas_frontend.kitchenmonitoring.domain.model.Sensor
 import com.smartgas_frontend.kitchenmonitoring.domain.model.SensorReading
 import com.smartgas_frontend.kitchenmonitoring.domain.model.Zone
@@ -53,6 +54,24 @@ class ZoneDetailViewModel(
 
     private val _state = mutableStateOf(UIState<ZoneDetailData>(isLoading = true))
     val state: State<UIState<ZoneDetailData>> get() = _state
+
+    fun updateZone(zoneDraft: ZoneDraft, onResult: (Resource<Zone>) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.updateZone(zoneId, zoneDraft)
+
+            if (result is Resource.Success) {
+                loadData()
+            }
+
+            onResult(result)
+        }
+    }
+
+    fun deleteZone(onResult: (Resource<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(repository.deleteZone(zoneId))
+        }
+    }
 
     fun loadData() {
         _state.value = UIState(isLoading = true, data = _state.value.data)

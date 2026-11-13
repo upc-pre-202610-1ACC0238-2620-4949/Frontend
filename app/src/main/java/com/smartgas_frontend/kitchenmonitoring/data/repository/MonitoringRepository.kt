@@ -7,6 +7,7 @@ import com.smartgas_frontend.kitchenmonitoring.domain.model.Sensor
 import com.smartgas_frontend.kitchenmonitoring.data.remote.MonitoringService
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.CreateSensorReadingRequest
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.CreateZoneRequest
+import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.UpdateZoneRequest
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.toReadingResult
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.toSensorReading
 import com.smartgas_frontend.kitchenmonitoring.data.remote.dto.toZone
@@ -27,10 +28,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 const val SENSOR_NOT_FOUND = "SENSOR_NOT_FOUND"
 const val EMPTY_ZONE_NAME = "EMPTY_ZONE_NAME"
 const val ZONE_LIMIT_REACHED = "ZONE_LIMIT_REACHED"
+const val ZONE_HAS_SENSORS = "ZONE_HAS_SENSORS"
 
 data class ZoneDraft(
     val name: String = "",
@@ -164,6 +167,39 @@ class MonitoringRepository(
 
     suspend fun createZone(accountId: Int, zoneDraft: ZoneDraft): Resource<Zone> = withContext(Dispatchers.IO) {
         safeCall { postZone(accountId, zoneDraft) }
+    }
+
+    suspend fun updateZone(id: Int, zoneDraft: ZoneDraft): Resource<Zone> = withContext(Dispatchers.IO) {
+        safeCall {
+            val name = zoneDraft.name.trim()
+
+            if (name.isEmpty()) {
+                throw DomainException(EMPTY_ZONE_NAME)
+            }
+
+            service.updateZone(
+                id,
+                UpdateZoneRequest(
+                    name = name,
+                    description = zoneDraft.description.trim(),
+                    sensitivity = zoneDraft.sensitivity.ifBlank { "Medium" }
+                )
+            ).bodyOrThrow().toZone()
+        }
+    }
+
+    suspend fun deleteZone(id: Int): Resource<Unit> = withContext(Dispatchers.IO) {
+        safeCall {
+            val response = service.deleteZone(id)
+
+            if (response.code() == 409) {
+                throw DomainException(ZONE_HAS_SENSORS)
+            }
+
+            if (!response.isSuccessful) {
+                throw HttpException(response)
+            }
+        }
     }
 
     suspend fun saveStarterZones(accountId: Int, zonesDraft: List<ZoneDraft>): Resource<List<Zone>> =
