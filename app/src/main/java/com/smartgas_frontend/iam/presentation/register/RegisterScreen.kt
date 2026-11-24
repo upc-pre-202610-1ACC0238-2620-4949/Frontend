@@ -42,7 +42,8 @@ import com.smartgas_frontend.shared.presentation.components.FormError
 fun RegisterScreen(
     viewModel: RegisterViewModel,
     onGoToDashboard: () -> Unit,
-    onLogin: () -> Unit
+    onLogin: () -> Unit,
+    onOpenTerms: () -> Unit = {}
 ) {
     val strings = LocalStrings.current
     val form = viewModel.form.value
@@ -137,7 +138,8 @@ fun RegisterScreen(
 
             TermsCheckLine(
                 checked = form.acceptedTerms,
-                onCheckedChange = { viewModel.onFormChanged(form.copy(acceptedTerms = it)) }
+                onCheckedChange = { viewModel.onFormChanged(form.copy(acceptedTerms = it)) },
+                onOpenTerms = onOpenTerms
             )
 
             if (error != null) {

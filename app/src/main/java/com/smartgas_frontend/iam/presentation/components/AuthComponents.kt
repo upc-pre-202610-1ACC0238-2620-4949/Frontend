@@ -36,8 +36,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -165,7 +167,12 @@ fun CheckLine(
  * Aun no hay paginas de terminos, por eso no navegan a ningun lado.
  */
 @Composable
-fun TermsCheckLine(checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+fun TermsCheckLine(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenTerms: () -> Unit = {}
+) {
     val strings = LocalStrings.current
     val terms = strings.t(R.string.termsAndConditions)
     val privacy = strings.t(R.string.privacyPolicy)
@@ -184,8 +191,11 @@ fun TermsCheckLine(checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifie
             } else {
                 append(rest.substring(0, next))
                 val isTerms = next == termsAt
-                withStyle(SpanStyle(color = Blue, fontWeight = FontWeight.SemiBold)) {
-                    append(if (isTerms) terms else privacy)
+                // Los dos enlaces abren la pantalla de Terminos y Condiciones (incluye la politica de privacidad)
+                withLink(LinkAnnotation.Clickable(if (isTerms) "terms" else "privacy") { onOpenTerms() }) {
+                    withStyle(SpanStyle(color = Blue, fontWeight = FontWeight.SemiBold)) {
+                        append(if (isTerms) terms else privacy)
+                    }
                 }
                 rest = rest.substring(next + if (isTerms) "{terms}".length else "{privacy}".length)
             }

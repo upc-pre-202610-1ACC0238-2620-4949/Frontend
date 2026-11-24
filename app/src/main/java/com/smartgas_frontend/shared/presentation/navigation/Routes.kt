@@ -42,5 +42,7 @@ object Routes {
     const val PROFILE = "app/profile"     // se abre con el icono de usuario de Home
     const val PLANS = "app/plans"
     const val REPORTS = "app/reports"
+    const val TERMS = "terms"            // desde el registro, antes de iniciar sesion
+    const val APP_TERMS = "app/terms"    // desde Ajustes
     const val NOT_FOUND = "not-found"
 }

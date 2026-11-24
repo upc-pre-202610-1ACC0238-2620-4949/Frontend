@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.ContactEmergency
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Vibration
@@ -68,6 +69,7 @@ private val languages = listOf("en" to "English (US)", "es" to "Español (LatAm)
 
 /** Textos propios de la pagina (mismo patron PageText que el resto de pantallas). */
 private class PageText(es: Boolean) {
+    val terms = if (es) "Términos y Condiciones" else "Terms and Conditions"
     val title = if (es) "Ajustes" else "Settings"
     val thresholds = if (es) "Umbrales de seguridad" else "Safety thresholds"
     val gasAlert = if (es) "Alerta de gas en" else "Gas alert at"
@@ -176,6 +178,8 @@ fun SettingsScreen(viewModel: SettingsViewModel, onNavigate: (String) -> Unit, o
             )
             Divider()
             NavItem(icon = Icons.Outlined.Description, title = pageText.reports, onClick = { onNavigate(Routes.REPORTS) })
+            Divider()
+            NavItem(icon = Icons.Outlined.Gavel, title = pageText.terms, onClick = { onNavigate(Routes.APP_TERMS) })
             Divider()
             // Fila roja "Sign out"
             Row(

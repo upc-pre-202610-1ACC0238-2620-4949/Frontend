@@ -44,6 +44,7 @@ import com.smartgas_frontend.iam.presentation.login.LoginScreen
 import com.smartgas_frontend.iam.presentation.profile.ProfileScreen
 import com.smartgas_frontend.iam.presentation.register.RegisterScreen
 import com.smartgas_frontend.iam.presentation.settings.SettingsScreen
+import com.smartgas_frontend.iam.presentation.terms.TermsScreen
 import com.smartgas_frontend.incidentdetection.presentation.di.IncidentDetectionPresentationModule
 import com.smartgas_frontend.incidentdetection.presentation.history.HistoryScreen
 import com.smartgas_frontend.incidentdetection.presentation.incidentdetail.IncidentDetailScreen
@@ -111,8 +112,13 @@ fun AppNavigation(pendingAlertId: Int? = null, onAlertOpened: () -> Unit = {}) {
             RegisterScreen(
                 viewModel = viewModel,
                 onGoToDashboard = goToApp,
-                onLogin = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.LOGIN) { inclusive = true } } }
+                onLogin = { navController.navigate(Routes.LOGIN) { popUpTo(Routes.LOGIN) { inclusive = true } } },
+                onOpenTerms = { navController.navigate(Routes.TERMS) }
             )
+        }
+
+        composable(Routes.TERMS) {
+            TermsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.APP) {
@@ -352,6 +358,10 @@ private fun Home(onLogout: () -> Unit, pendingAlertId: Int?, onAlertOpened: () -
                     val viewModel = viewModel { PaymentManagementPresentationModule.getPlansViewModel() }
 
                     PlansScreen(viewModel = viewModel)
+                }
+
+                composable(Routes.APP_TERMS) {
+                    TermsScreen(onBack = { navController.popBackStack() }, edgeToEdge = false)
                 }
 
                 composable(Routes.REPORTS) {
