@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
     steps:
       - uses: actions/checkout@v5
@@ -30,3 +33,16 @@ jobs:
         with:
           name: SmartGas-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+      # Sube el APK a Firebase App Distribution (solo en main, y solo si el repo tiene los secretos configurados).
+      # Secretos: FIREBASE_APP_ID (ID de la app en Firebase) y FIREBASE_SERVICE_ACCOUNT (JSON de la cuenta de servicio).
+      # Los testers se gestionan en la consola de Firebase, en el grupo "docentes".
+      - name: Distribute with Firebase App Distribution
+        if: github.ref == 'refs/heads/main' && env.FIREBASE_APP_ID != ''
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase.json"
+          npx --yes firebase-tools@latest appdistribution:distribute "app/build/outputs/apk/debug/app-debug.apk" \
+            --app "$FIREBASE_APP_ID" \
+            --groups "docentes" \
+            --release-notes "SmartGas ${GITHUB_SHA::7}: $(git log -1 --pretty=%s)"
